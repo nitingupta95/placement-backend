@@ -15,8 +15,6 @@ services:
     name: placement-portal-backend
     plan: free
     runtime: docker
-    # Specifies that the service is in the 'backend' subdirectory
-    rootDir: ./backend
     healthCheckPath: /
     envVars:
       - key: DATABASE_URL
