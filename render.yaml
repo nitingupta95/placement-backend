@@ -10,16 +10,20 @@ services:
       sizeGB: 1
       mountPath: /var/lib/postgresql/data
 
-  # Backend Service (Docker)
+  # Backend Service (Node)
   - type: web
     name: placement-portal-backend
-    runtime: docker
+    runtime: node
     plan: free
     rootDir: .
+    buildCommand: "npm ci && npx prisma generate && npm run build"
+    startCommand: "npm start"
     healthCheckPath: /
     preDeployCommand: "npx prisma migrate deploy"
 
     envVars:
+      - key: NODE_VERSION
+        value: 18
       - key: DATABASE_URL
         fromService:
           type: pserv
