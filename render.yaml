@@ -17,6 +17,7 @@ services:
     plan: free
     rootDir: .
     healthCheckPath: /
+    preDeployCommand: "npx prisma migrate deploy"
 
     envVars:
       - key: DATABASE_URL
