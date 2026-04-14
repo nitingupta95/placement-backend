@@ -14,8 +14,7 @@ services:
   - type: web
     name: placement-portal-backend
     plan: free
-    runtime: docker
-    healthCheckPath: /
+    runtime: docker    # rootDir: ./ # Set to the root of the repository    healthCheckPath: /
     envVars:
       - key: DATABASE_URL
         fromService:
