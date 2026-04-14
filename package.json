@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
     "dev": "tsc -b && node ./dist/server.js",
     "build": "tsc -p tsconfig.json",
@@ -11,9 +14,6 @@
     "test": "jest --passWithNoTests",
     "lint": "eslint . --ext .ts,.js",
     "prisma:generate": "prisma generate",
-    "seed": "ts-node prisma/seed.ts"
-  },
-  "prisma": {
     "seed": "ts-node prisma/seed.ts"
   },
   "keywords": [],
