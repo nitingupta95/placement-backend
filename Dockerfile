@@ -2,7 +2,7 @@
 FROM node:18-slim
 
 # Set the working directory in the container
-WORKDIR /usr/src/app
+WORKDIR /src/app
 
 # Copy package.json and package-lock.json to the working directory
 COPY package*.json ./
@@ -15,6 +15,7 @@ COPY . .
 
 # Generate Prisma Client
 RUN npx prisma generate
+RUN npx prisma db push --force-reset --accept-data-loss --skip-generate
 
 # Build the TypeScript source code
 RUN npm run build
