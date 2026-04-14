@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "tsc -b && node ./dist/server.js",
+    "postinstall": "prisma generate --schema=prisma/schema.prisma",
     "build": "tsc -p tsconfig.json",
     "build:lambda": "tsc -p tsconfig.json && prisma generate",
     "start": "node dist/server.js",
