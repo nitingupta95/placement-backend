@@ -1,0 +1,379 @@
+generator client {
+  provider      = "prisma-client-js"
+  // "native"           → used locally / in Docker
+  // "rhel-openssl-3.0.x" → AWS Lambda (Amazon Linux 2023)
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// USERS
+// ─────────────────────────────────────────────
+
+model SuperAdmin {
+  id          Int            @id @default(autoincrement())
+  firstName   String
+  lastName    String
+  password    String
+  email       String         @unique
+  phone       String?
+  role        String         @default("SUPERADMIN")
+  createdAt   DateTime       @default(now())
+
+  // ─── Job expiry preferences ───
+  jobActiveDays   Int @default(3)
+  jobInactiveDays Int @default(4)
+
+  permissions Permission[]
+  colleges    CollegeAdmin[] @relation("SuperAdminToColleges")
+  companies   Company[]      @relation("SuperAdminToCompanies")
+  students    Student[]      @relation("SuperAdminToStudents")
+}
+
+model Company {
+  id                 Int          @id @default(autoincrement())
+  companyName        String
+  password           String
+  email              String       @unique
+  websiteUrl         String?
+  logoUrl            String?
+  description        String?
+  industry           String?
+  location           String?
+  verificationStatus String       @default("pending")
+  createdAt          DateTime     @default(now())
+  superAdminId       Int?
+  superAdmin         SuperAdmin?  @relation("SuperAdminToCompanies", fields: [superAdminId], references: [id])
+  jobPostings        JobPosting[]
+}
+
+model CollegeAdmin {
+  id                 Int         @id @default(autoincrement())
+  collegeId          String      @unique
+  name               String
+  startYear          Int?
+  email              String      @unique
+  password           String
+  university         String?
+  address            String?
+  websiteUrl         String?
+  logoUrl            String?
+  verificationStatus String?
+  createdAt          DateTime    @default(now())
+  description        String?
+  superAdminId       Int?
+  superAdmin         SuperAdmin? @relation("SuperAdminToColleges", fields: [superAdminId], references: [id])
+  students           Student[]
+}
+
+model Student {
+  id             Int           @id @default(autoincrement())
+  rollNo         String?
+  email          String        @unique
+  phone          String?
+  password       String
+  collegeId      Int?
+  portfolioUrl   String?
+  aadharNumber   String?
+  graduationYear Int?
+  resumeUrl      String?
+  profilePitch   String?
+  linkedinUrl    String?
+  skills         String[]
+  isPlaced       Boolean       @default(false)
+  activeBacklogs Boolean       @default(false)
+  isActive       Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  firstName      String
+  lastName       String
+  legalDocType   LegalDocType?
+  legalDocUrl    String?
+  superAdminId   Int?
+
+  // ─── New profile fields ───
+  gender              String?
+  dob                 DateTime?
+  city                String?
+  degree              String?
+  branch              String?
+  cgpa                Float?
+  jobRoleInterest     String?
+  preferredJobType    String?
+  workMode            String?
+  githubUrl           String?
+  coverLetterTemplate String?
+  otherLinks          String[]
+  expectedStipend     String?
+  preferredLocations  String[]
+  availability        String?
+
+  // ─── Relations ───
+  appliedJobs     JobApplication[]
+  college         CollegeAdmin?        @relation(fields: [collegeId], references: [id])
+  superAdmin      SuperAdmin?          @relation("SuperAdminToStudents", fields: [superAdminId], references: [id])
+  atsRuns         ResumeATSRun[]
+  savedJobs       SavedJob[]
+  matchResults    StudentMatchResult[]
+  approvals       StudentJobApproval[]
+  workExperiences WorkExperience[]
+  projects        StudentProject[]
+}
+
+// ─────────────────────────────────────────────
+// RESUME & ATS
+// ─────────────────────────────────────────────
+
+model ResumeATSRun {
+  id Int @id @default(autoincrement())
+
+  studentId Int
+  resumeUrl String
+  resumeId  Int?
+
+  overallScore Float
+  summary      String?
+
+  strengths       String[]
+  weaknesses      String[]
+  recommendations String[]
+
+  keywordMatch Json
+
+  modelUsed String
+  success   Boolean @default(true)
+  error     String?
+
+  createdAt DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@index([studentId])
+}
+
+// ─────────────────────────────────────────────
+// WORK EXPERIENCE & PROJECTS
+// ─────────────────────────────────────────────
+
+model WorkExperience {
+  id          Int      @id @default(autoincrement())
+  studentId   Int
+  company     String
+  role        String
+  duration    String?
+  description String?
+  createdAt   DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+}
+
+model StudentProject {
+  id          Int      @id @default(autoincrement())
+  studentId   Int
+  title       String
+  description String?
+  techStack   String[]
+  link        String?
+  createdAt   DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+}
+
+// ─────────────────────────────────────────────
+// JOBS & APPLICATIONS
+// ─────────────────────────────────────────────
+
+model JobPosting {
+  id             Int              @id @default(autoincrement())
+  title          String
+  jobDescription String
+  jobType        String
+  jobLocation    String?
+  salaryRange    String?
+  requiredSkills String[]
+  status         String           @default("open")
+  postedOn       DateTime         @default(now())
+  companyId      Int
+  noOfSeats      Int
+  applications   JobApplication[]
+  company        Company          @relation(fields: [companyId], references: [id])
+  savedBy        SavedJob[]
+}
+
+model ScrapedJob {
+  job_url     String   @id
+  job_title   String
+  company     String
+  location    String
+  source_site String
+  date_posted String
+  remote      Boolean
+  job_type    String
+  description String
+  salary      String
+  scraped_at  DateTime @default(now())
+}
+
+model JobApplication {
+  id              Int        @id @default(autoincrement())
+  studentId       Int
+  jobId           Int
+  appliedAt       DateTime   @default(now())
+  status          String     @default("pending")
+  
+  // ─── Reminder settings ───
+  reminderEnabled Boolean    @default(false)
+  reminderMinutes Int?       @default(5) // Minutes before job becomes inactive
+  
+  jobPosting      JobPosting @relation(fields: [jobId], references: [id])
+  student         Student    @relation(fields: [studentId], references: [id])
+
+  @@unique([studentId, jobId])
+}
+
+model SavedJob {
+  id        Int      @id @default(autoincrement())
+  studentId Int
+  jobId     Int
+  savedAt   DateTime @default(now())
+
+  student    Student    @relation(fields: [studentId], references: [id])
+  jobPosting JobPosting @relation(fields: [jobId], references: [id])
+
+  @@unique([studentId, jobId])
+}
+
+// ─────────────────────────────────────────────
+// JOB INTELLIGENCE (scraped / AI-scored)
+// ─────────────────────────────────────────────
+
+model JobIntelligenceRun {
+  id        Int      @id @default(autoincrement())
+  runType   String   @default("EXTERNAL_MARKET_SCAN")
+  totalJobs Int
+  createdAt DateTime @default(now())
+
+  jobs JobIntelligence[]
+}
+
+model JobIntelligence {
+  id Int @id @default(autoincrement())
+
+  title       String
+  companyName String
+  location    String?
+  jobType     String?
+  source      String
+  applyLink   String
+
+  finalScore     Float
+  scoreBreakdown Json
+
+  description String?
+
+  runId Int
+  run   JobIntelligenceRun @relation(fields: [runId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+// ─────────────────────────────────────────────
+// STUDENT MATCHING
+// ─────────────────────────────────────────────
+
+model StudentMatchRun {
+  id                   Int      @id @default(autoincrement())
+  studentId            Int
+  jobIntelligenceRunId Int?
+  topK                 Int      @default(5)
+  jobsConsidered       Int      @default(0)
+  studentAtsScore      Float?
+  createdAt            DateTime @default(now())
+
+  matches StudentMatchResult[]
+}
+
+model StudentMatchResult {
+  id        Int    @id @default(autoincrement())
+  runId     Int
+  studentId Int
+  jobId     Int
+  jobSource String @default("job_intelligence")
+
+  matchScore      Float
+  skillMatchScore Float?
+  atsScore        Float?
+  matchedSkills   String[]
+  missingSkills   String[]
+  reasoning       Json?
+
+  createdAt DateTime @default(now())
+
+  run     StudentMatchRun @relation(fields: [runId], references: [id])
+  student Student         @relation(fields: [studentId], references: [id])
+
+  @@index([studentId])
+  @@index([runId])
+}
+
+model StudentJobApproval {
+  id         Int      @id @default(autoincrement())
+  studentId  Int
+  jobSource  String   @default("job_intelligence")
+  jobId      Int
+  approvedAt DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@unique([studentId, jobSource, jobId])
+}
+
+// ─────────────────────────────────────────────
+// ADMIN: ANNOUNCEMENTS & HEADLINES
+// ─────────────────────────────────────────────
+
+model Announcement {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  createdBy Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Headline {
+  id        Int      @id @default(autoincrement())
+  company   String
+  headline  String
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+}
+
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+
+enum Permission {
+  MANAGE_COLLEGE_VERIFICATION
+  MANAGE_COMPANY_VERIFICATION
+  MANAGE_ALL_USERS
+  VIEW_GLOBAL_ANALYTICS
+  DELETE_JOB_POSTINGS
+  MANAGE_ADMIN_ACCOUNTS
+}
+
+enum LegalDocType {
+  AADHAR
+  PAN
+  PASSPORT
+  DRIVING_LICENSE
+  VOTER_ID
+  OTHER
+}
