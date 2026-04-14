@@ -1,0 +1,32 @@
+services:
+  # A PostgreSQL database
+  - type: pserv
+    name: postgres-db
+    plan: free
+    postgres:
+      version: 13
+    disk:
+      name: postgres-data
+      sizeGB: 1
+      mountPath: /var/lib/postgresql/data
+
+  # The backend web service
+  - type: web
+    name: placement-portal-backend
+    plan: free
+    runtime: docker
+    # Specifies that the service is in the 'backend' subdirectory
+    rootDir: ./backend
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_URL
+        fromService:
+          type: pserv
+          name: postgres-db
+          property: connectionString
+      # The following are secret environment variables.
+      # You will need to create a new "Secret File" on Render
+      # and add these key-value pairs.
+      - fromSecretFile:
+          name: backend-secrets
+          path: .env
