@@ -223,7 +223,7 @@ export const getScrapedJobs = async (req: Request, res: Response) => {
     ]);
 
     // Annotate each job with its zone
-    const annotatedJobs = jobs.map((job) => ({
+    const annotatedJobs = jobs.map((job: any) => ({
       ...job,
       zone: job.scraped_at >= activeThreshold ? "active" : "inactive",
     }));

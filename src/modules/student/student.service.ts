@@ -1,6 +1,6 @@
 import { StudentRepository } from "./student.repository";
 import { UpdateProfileInput, WorkExperienceInput, StudentProjectInput } from "./dto/update-profile.dto";
-import { matchOnCampusJob, matchOffCampusJob, StudentProfile } from "./job-match.util";
+import { matchOnCampusJob, matchOffCampusJob, StudentProfile, OnCampusMatchResult, OffCampusMatchResult } from "./job-match.util";
 
 const repo = new StudentRepository();
 
@@ -162,13 +162,13 @@ export class StudentService {
       projects: student.projects,
     };
 
-    const onCampusJobs = jobPostings
-      .map(job => matchOnCampusJob(profile, job))
-      .sort((a, b) => b.matchScore - a.matchScore);
+    const onCampusJobs: OnCampusMatchResult[] = (jobPostings as any[])
+      .map((job: any) => matchOnCampusJob(profile, job))
+      .sort((a: OnCampusMatchResult, b: OnCampusMatchResult) => b.matchScore - a.matchScore);
 
-    const offCampusJobs = scrapedJobs
-      .map(job => matchOffCampusJob(profile, job))
-      .sort((a, b) => b.matchScore - a.matchScore);
+    const offCampusJobs: OffCampusMatchResult[] = (scrapedJobs as any[])
+      .map((job: any) => matchOffCampusJob(profile, job))
+      .sort((a: OffCampusMatchResult, b: OffCampusMatchResult) => b.matchScore - a.matchScore);
 
     return { onCampusJobs, offCampusJobs };
   }

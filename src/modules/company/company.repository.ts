@@ -48,7 +48,7 @@ export class CompanyRepository {
       select: { id: true, title: true },
     });
 
-    const jobIds = jobs.map((j) => j.id);
+    const jobIds = jobs.map((j: { id: number }) => j.id);
 
     const [pending, shortlisted, interview, offered, rejected] = await Promise.all([
       prisma.jobApplication.count({ where: { jobId: { in: jobIds }, status: "pending" } }),

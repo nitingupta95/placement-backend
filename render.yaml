@@ -22,15 +22,17 @@ services:
     preDeployCommand: "npx prisma migrate deploy --schema=prisma/schema.prisma"
 
     envVars:
-      - key: NODE_VERSION
-        value: 18
+      # Load secrets from Render Secret File
+      - fromSecretFile:
+          name: backend-secrets
+          path: .env
+
+      # IMPORTANT: keep DATABASE_URL out of the secret file; this value should come from Render Postgres.
       - key: DATABASE_URL
         fromService:
           type: pserv
           name: postgres-db
           property: connectionString
 
-      # Load secrets from Render Secret File
-      - fromSecretFile:
-          name: backend-secrets
-          path: .env
+      - key: NODE_VERSION
+        value: 18
